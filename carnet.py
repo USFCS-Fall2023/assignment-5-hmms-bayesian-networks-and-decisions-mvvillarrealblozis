@@ -11,7 +11,6 @@ car_model = BayesianNetwork(
     ]
 )
 
-# Defining the parameters using CPT
 from pgmpy.factors.discrete import TabularCPD
 
 cpd_battery = TabularCPD(
@@ -42,14 +41,35 @@ cpd_ignition = TabularCPD(
                  "Battery": ['Works',"Doesn't work"]}
 )
 
+car_model.add_node("KeyPresent")
+car_model.add_edge("KeyPresent", "Starts")
+
+cpd_key_present = TabularCPD(
+    variable="KeyPresent",
+    variable_card=2,
+    values=[[0.7], [0.3]],
+    state_names={"KeyPresent": ['yes', 'no']}
+)
+
+
+
 cpd_starts = TabularCPD(
     variable="Starts",
     variable_card=2,
-    values=[[0.95, 0.05, 0.05, 0.001], [0.05, 0.95, 0.95, 0.9999]],
-    evidence=["Ignition", "Gas"],
-    evidence_card=[2, 2],
-    state_names={"Starts":['yes','no'], "Ignition":["Works", "Doesn't work"], "Gas":['Full',"Empty"]},
+    values=[
+        [0.99, 0.01, 0.01, 0.01, 0.99, 0.01, 0.01, 0.01],
+        [0.01, 0.99, 0.99, 0.99, 0.01, 0.99, 0.99, 0.99]
+    ],
+    evidence=["Ignition", "Gas", "KeyPresent"],
+    evidence_card=[2, 2, 2],
+    state_names={
+        "Starts": ['yes', 'no'],
+        "Ignition": ["Works", "Doesn't work"],
+        "Gas": ['Full', "Empty"],
+        "KeyPresent": ['yes', 'no']
+    }
 )
+
 
 cpd_moves = TabularCPD(
     variable="Moves", variable_card=2,
@@ -59,13 +79,4 @@ cpd_moves = TabularCPD(
     state_names={"Moves": ["yes", "no"],
                  "Starts": ['yes', 'no'] }
 )
-
-
-# Associating the parameters with the model structure
-car_model.add_cpds( cpd_starts, cpd_ignition, cpd_gas, cpd_radio, cpd_battery, cpd_moves)
-
-car_infer = VariableElimination(car_model)
-
-print(car_infer.query(variables=["Moves"],evidence={"Radio":"turns on", "Starts":"yes"}))
-
 
